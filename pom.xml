@@ -53,6 +53,16 @@
 			<artifactId>hibernate-community-dialects</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.github.anastaciocintra</groupId>
+			<artifactId>escpos-coffee</artifactId>
+			<version>4.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fazecast</groupId>
+			<artifactId>jSerialComm</artifactId>
+			<version>2.11.4</version>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
