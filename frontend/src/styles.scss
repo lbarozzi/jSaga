@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --text-ink: #1f1c18;
+  --muted-ink: #6f6456;
+  --accent-ink: #c6492d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--text-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Chivo', sans-serif;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 18px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(46, 26, 5, 0.08);
+}

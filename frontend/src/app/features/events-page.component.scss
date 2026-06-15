@@ -1,0 +1,42 @@
+.page-head h2 {
+  margin: 0;
+}
+
+.page-head p {
+  margin: 0.4rem 0 0;
+  color: var(--muted-ink);
+}
+
+.grid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.event-card h3 {
+  margin: 0;
+}
+
+.date {
+  margin: 0.3rem 0 0.8rem;
+  color: var(--muted-ink);
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.badge.on {
+  background: rgba(57, 168, 84, 0.2);
+  color: #145125;
+}
+
+.badge.off {
+  background: rgba(180, 70, 40, 0.15);
+  color: #7d2f1a;
+}

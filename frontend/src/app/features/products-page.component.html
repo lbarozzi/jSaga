@@ -1,0 +1,31 @@
+<section class="page-head card">
+  <h2>Prodotti</h2>
+  <p>Catalogo live dal backend Spring.</p>
+</section>
+
+<section class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Categoria</th>
+        <th>Prezzo</th>
+        <th>Stato</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of products$ | async; track item.id) {
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.category }}</td>
+          <td>{{ item.price | currency: 'EUR' }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.active ? 'on' : 'off'">
+              {{ item.active ? 'Attivo' : 'Disattivo' }}
+            </span>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

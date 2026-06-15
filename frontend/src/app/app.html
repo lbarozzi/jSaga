@@ -1,0 +1,22 @@
+<div class="app-bg"></div>
+
+<div class="shell">
+  <header class="topbar card">
+    <div>
+      <p class="brand-kicker">jSaga</p>
+      <h1>Gestionale Festa</h1>
+    </div>
+
+    <nav>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+      <a routerLink="/cassa" routerLinkActive="active">Cassa</a>
+      <a routerLink="/prodotti" routerLinkActive="active">Prodotti</a>
+      <a routerLink="/eventi" routerLinkActive="active">Eventi</a>
+      <a routerLink="/report" routerLinkActive="active">Report</a>
+    </nav>
+  </header>
+
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+</div>

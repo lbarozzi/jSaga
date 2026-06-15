@@ -1,0 +1,50 @@
+.page-head h2 {
+  margin: 0;
+}
+
+.page-head p {
+  margin: 0.4rem 0 0;
+  color: var(--muted-ink);
+}
+
+.table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.8rem;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.1);
+}
+
+th {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-ink);
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.badge.on {
+  background: rgba(57, 168, 84, 0.2);
+  color: #145125;
+}
+
+.badge.off {
+  background: rgba(180, 70, 40, 0.15);
+  color: #7d2f1a;
+}

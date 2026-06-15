@@ -1,0 +1,16 @@
+<section class="page-head card">
+  <h2>Eventi</h2>
+  <p>Gestione serate con stato apertura/chiusura.</p>
+</section>
+
+<section class="grid">
+  @for (event of events$ | async; track event.id) {
+    <article class="card event-card">
+      <h3>{{ event.name }}</h3>
+      <p class="date">{{ event.eventDate | date: 'dd/MM/yyyy' }}</p>
+      <span class="badge" [ngClass]="event.status === 'APERTO' ? 'on' : 'off'">
+        {{ event.status }}
+      </span>
+    </article>
+  }
+</section>
