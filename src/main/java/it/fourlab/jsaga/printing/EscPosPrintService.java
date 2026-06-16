@@ -1,15 +1,12 @@
 package it.fourlab.jsaga.printing;
 
-import com.fazecast.jSerialComm.SerialPort;
 import com.github.anastaciocintra.escpos.EscPos;
+import com.github.anastaciocintra.escpos.barcode.BarCode;
 import com.github.anastaciocintra.escpos.image.CoffeeImageImpl;
 import com.github.anastaciocintra.escpos.image.EscPosImage;
 import com.github.anastaciocintra.escpos.image.RasterBitImageWrapper;
-import com.github.anastaciocintra.escpos.barcode.BarCode;
 import com.github.anastaciocintra.escpos.image.Bitonal;
 import com.github.anastaciocintra.escpos.image.BitonalThreshold;
-import com.github.anastaciocintra.escpos.image.CoffeeImageImpl;
-import com.github.anastaciocintra.escpos.image.EscPosImage;
 import com.github.anastaciocintra.output.PrinterOutputStream;
 
 import java.io.IOException;
@@ -19,17 +16,18 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+import java.io.File;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
-//AWT
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-//
-import java.nio.file.Files;
 
 
 
@@ -39,24 +37,36 @@ public class EscPosPrintService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-    private final EscPosProperties properties;
+    protected final EscPosProperties properties;
 
     public EscPosPrintService(EscPosProperties properties) {
         this.properties = properties;
     }
 
-    public void printOrder(String title, List<PrintLine> lines, BigDecimal totalAmount) {
+    public void printOrder(String title, List<PrintLine> lines, BigDecimal totalAmount,long orderId) {
         if (!properties.isEnabled()) {
             throw new EscPosPrinterException("ESC/POS printing is disabled. Set jsaga.print.escpos.enabled=true");
         }
 
-        SerialPort serialPort = properties.isSerialEnabled() ? openSerialPort() : null;
-        try (OutputStream outputStream = this.properties.isSystemPrintEnabled() ? 
-                                            new PrinterOutputStream(PrinterOutputStream.getPrintServiceByName(this.properties.getPrinterName())): 
-                                            serialPort.getOutputStream(); EscPos escPos = new EscPos(outputStream)) {
+        try (OutputStream outputStream = openOutputStream(); EscPos escPos = new EscPos(outputStream)) {
             RasterBitImageWrapper bitImageWrapper = new RasterBitImageWrapper();
-            var algorithm = new BitonalThreshold(150);
-            escPos.writeLF(title);
+            Bitonal algorithm = new BitonalThreshold(150); 
+            File imageFile = new File("/tmp/logobn.png");
+            if(!imageFile.exists()) {
+                throw new IOException("Immagine non trovata: " + imageFile.getAbsolutePath());
+            }
+
+            BufferedImage image = ImageIO.read(imageFile);
+            if(image == null) {
+                throw new IOException("Formato immagine non supportato: " + imageFile.getAbsolutePath());
+            } else {
+                image = resizeIfTooWide(image, 384);
+                EscPosImage escposImage = new EscPosImage(new CoffeeImageImpl(image), algorithm);
+                escPos.write(bitImageWrapper, escposImage);
+            }
+
+            BarCode barcode = new BarCode();
+            //escPos.writeLF(title);
             escPos.writeLF("Data: " + LocalDateTime.now().format(DATE_TIME_FORMATTER));
             escPos.writeLF("------------------------------");
 
@@ -68,18 +78,34 @@ public class EscPosPrintService {
             }
 
             escPos.writeLF("------------------------------");
-            escPos.writeLF("Totale: EUR " + totalAmount);
+            //escPos.writeLF("Totale: EUR " + totalAmount);
+            BufferedImage rigaScontrino = createLineItemImage(
+                        "Totale: € " + totalAmount);
+            EscPosImage escposLineImage = new EscPosImage(new CoffeeImageImpl(rigaScontrino), algorithm);
+            escPos.write(bitImageWrapper, escposLineImage);
+
+            //
+            escPos.write(barcode,String.format("%012d/%s",orderId, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))));
             escPos.feed(4).cut(resolveCutMode());
             escPos.close();
         } catch (IOException ex) {
-            throw new EscPosPrinterException("Error while printing receipt on serial ESC/POS", ex);
+            throw new EscPosPrinterException("Error while printing receipt", ex);
         } finally {
-            serialPort.closePort();
+            releaseOutputStream();
         }
     }
+
+    protected OutputStream openOutputStream() throws IOException {
+        return new PrinterOutputStream(PrinterOutputStream.getPrintServiceByName(properties.getPrinterName()));
+    }
+
+    protected void releaseOutputStream() {
+        // no-op for system printer
+    }
+
     //*************************
-private static BufferedImage resizeIfTooWide(BufferedImage src, int maxWidth) {
-        if(src.getWidth() <= maxWidth) {
+    private static BufferedImage resizeIfTooWide(BufferedImage src, int maxWidth) {
+        if (src.getWidth() <= maxWidth) {
             return src;
         }
 
@@ -128,68 +154,58 @@ private static BufferedImage resizeIfTooWide(BufferedImage src, int maxWidth) {
         g2d.dispose();
         return lineImage;
     }
+    private static BufferedImage createLineItemImage(String testo){
+        int altezzaPx = 30;
+        int padding = 1;
+        int colonnaQta = 48;
+        int colonnaEuro = 18;
+        int colonnaPrezzo = 84;
+        int colonnaDescrizione = 384 - (padding * 2) - colonnaQta - colonnaPrezzo - colonnaEuro;
+
+        BufferedImage lineImage = new BufferedImage(384, altezzaPx, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = lineImage.createGraphics();
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, 384, altezzaPx);
+
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Monospaced", Font.BOLD, 22));
+        FontMetrics fm = g2d.getFontMetrics();
+        int baseline = (altezzaPx - fm.getHeight()) / 2 + fm.getAscent();
+
+        String desc = fitTextToWidth(g2d, testo, colonnaDescrizione);
+
+        int xDesc = padding;
+
+        g2d.drawString(desc, xDesc, baseline);
+
+        g2d.dispose();
+        return lineImage;
+    }
 
     private static String fitTextToWidth(Graphics2D g2d, String text, int maxWidthPx) {
-        if(text == null || text.isEmpty()) {
+        if (text == null || text.isEmpty()) {
             return "";
         }
 
         FontMetrics fm = g2d.getFontMetrics();
-        if(fm.stringWidth(text) <= maxWidthPx) {
+        if (fm.stringWidth(text) <= maxWidthPx) {
             return text;
         }
 
         String ellipsis = "...";
         int allowed = maxWidthPx - fm.stringWidth(ellipsis);
-        if(allowed <= 0) {
+        if (allowed <= 0) {
             return ellipsis;
         }
 
         int i = text.length();
-        while(i > 0 && fm.stringWidth(text.substring(0, i)) > allowed) {
+        while (i > 0 && fm.stringWidth(text.substring(0, i)) > allowed) {
             i--;
         }
 
         return text.substring(0, i) + ellipsis;
     }
     //*************************
-
-    private SerialPort openSerialPort() {
-        SerialPort serialPort = SerialPort.getCommPort(properties.getSerialPort());
-        serialPort.setComPortParameters(
-                properties.getSerialBaudRate(),
-                properties.getSerialDataBits(),
-                resolveStopBits(properties.getSerialStopBits()),
-                resolveParity(properties.getSerialParity()));
-        serialPort.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 0);
-
-        if (!serialPort.openPort()) {
-            throw new EscPosPrinterException("Cannot open serial port: " + properties.getSerialPort());
-        }
-
-        return serialPort;
-    }
-
-    private static int resolveStopBits(int stopBits) {
-        return switch (stopBits) {
-            case 1 -> SerialPort.ONE_STOP_BIT;
-            case 2 -> SerialPort.TWO_STOP_BITS;
-            default -> throw new EscPosPrinterException("Unsupported stop bits value: " + stopBits);
-        };
-    }
-
-    private static int resolveParity(String parity) {
-        if (parity == null) {
-            return SerialPort.NO_PARITY;
-        }
-
-        return switch (parity.trim().toLowerCase()) {
-            case "none" -> SerialPort.NO_PARITY;
-            case "odd" -> SerialPort.ODD_PARITY;
-            case "even" -> SerialPort.EVEN_PARITY;
-            default -> throw new EscPosPrinterException("Unsupported parity value: " + parity);
-        };
-    }
 
     private EscPos.CutMode resolveCutMode() {
         if ("partial".equalsIgnoreCase(properties.getCutMode())) {

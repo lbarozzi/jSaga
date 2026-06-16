@@ -57,7 +57,7 @@ public class OrderService {
     public void printOrder(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
-        printService.printOrder("ORATORIO - GESTIONALE FESTA", toLines(order.getItems()), order.getTotalAmount());
+        printService.printOrder("ORATORIO - GESTIONALE FESTA", toLines(order.getItems()), order.getTotalAmount(),order.getId());
     }
 
     private List<OrderItem> resolveItems(List<OrderItemRequest> requests) {
@@ -83,7 +83,7 @@ public class OrderService {
 
     private boolean tryPrint(Order order) {
         try {
-            printService.printOrder("ORATORIO - GESTIONALE FESTA", toLines(order.getItems()), order.getTotalAmount());
+            printService.printOrder("ORATORIO - GESTIONALE FESTA", toLines(order.getItems()), order.getTotalAmount(),order.getId());
             return true;
         } catch (EscPosPrinterException e) {
             log.warn("Stampa non riuscita per ordine {}: {}", order.getId(), e.getMessage());
