@@ -33,7 +33,7 @@ export interface EventRequest {
 @Injectable({ providedIn: 'root' })
 export class JsagaApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1';
+  private readonly baseUrl = 'http://localhost:8080/api/v1';
 
   // Products
   getProducts(active?: boolean): Observable<Product[]> {
