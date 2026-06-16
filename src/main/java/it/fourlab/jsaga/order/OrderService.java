@@ -86,7 +86,7 @@ public class OrderService {
             printService.printOrder("ORATORIO - GESTIONALE FESTA", toLines(order.getItems()), order.getTotalAmount(),order.getId());
             return true;
         } catch (EscPosPrinterException e) {
-            log.warn("Stampa non riuscita per ordine {}: {}", order.getId(), e.getMessage());
+            log.warn("Stampa non riuscita per ordine {}: {}", order.getId(), e.getMessage(), e);
             return false;
         }
     }

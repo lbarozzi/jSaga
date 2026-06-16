@@ -8,7 +8,7 @@ jsaga.print.escpos.serial-baud-rate=9600
 jsaga.print.escpos.serial-data-bits=8
 jsaga.print.escpos.serial-stop-bits=1
 jsaga.print.escpos.serial-parity=none
-jsaga.print.escpos.system-print.enabled=true
+jsaga.print.escpos.system-print-enabled=true
 jsaga.print.escpos.printer-name=pt-210
  */
 @ConfigurationProperties(prefix = "jsaga.print.escpos")
