@@ -1,25 +1,26 @@
 # Piano di sviluppo e test - Gestionale Festa Oratorio
 
-Data: 2026-06-15
-Progetto: jSaga (Spring Boot backend + Angular frontend)
+Data aggiornamento: 2026-06-16
+Progetto: jSaga (Spring Boot 4.1 backend + Angular 20 frontend)
+
+---
 
 ## 1) Obiettivo del prodotto
-Realizzare un sistema per la gestione vendite durante una festa di oratorio, con focus su:
+Sistema per la gestione vendite durante una festa di oratorio:
 - gestione prodotti gastronomici e bevande;
 - emissione scontrino interno non fiscale;
 - consultazione statistiche di venduto;
 - utilizzo operativo su server locale con tablet/smartphone in LAN.
 
+---
+
 ## 2) Requisiti raccolti (confermati)
-- Eventi: supporto a piu eventi/serate.
+- Eventi: supporto a più eventi/serate.
 - Pagamenti: solo contanti (MVP).
-- Flusso cassa: selezione prodotti -> totale -> pagamento -> stampa scontrino.
+- Flusso cassa: selezione prodotti → totale → pagamento → stampa scontrino.
 - Magazzino: no scarico giacenze automatico nel MVP (solo report vendite).
 - Ruoli: cassiere, admin.
-- MVP prioritario:
-  - acquisto e stampa scontrino;
-  - statistiche venduto;
-  - CRUD prodotti.
+- MVP prioritario: acquisto e stampa scontrino; statistiche venduto; CRUD prodotti.
 - Vincoli legali: ricevuta interna non fiscale.
 - Test iniziali: essenziali (unit + smoke).
 - Database: SQLite.
@@ -28,6 +29,8 @@ Realizzare un sistema per la gestione vendite durante una festa di oratorio, con
 - Auth MVP: username/password semplice, senza recupero password.
 - Annulli: consentito solo annullo prima della conferma vendita.
 - Report: evento corrente + confronto base tra eventi.
+
+---
 
 ## 3) Scope MVP (release 1)
 ### In scope
@@ -55,162 +58,171 @@ Realizzare un sistema per la gestione vendite durante una festa di oratorio, con
 - Integrazione fiscale.
 - Storno post-conferma vendita.
 
-## 4) Architettura proposta
-## Backend (Spring Boot)
-- Moduli logici:
-  - Auth e utenti
-  - Catalogo prodotti
-  - Eventi
-  - Vendite e scontrini
-  - Reportistica
+---
+
+## 4) Architettura
+
+### Backend (Spring Boot 4.1, Java 21)
+- Moduli logici: Auth/Utenti · Catalogo prodotti · Eventi · Vendite/Scontrini · Reportistica
 - API REST versionate (`/api/v1/...`).
-- DTO separati da entity.
-- Validazione input con Bean Validation.
-- Error handling centralizzato (`@ControllerAdvice`).
-- Persistenza: JPA/Hibernate con SQLite per MVP.
+- DTO separati da entity. Bean Validation. `@ControllerAdvice` globale.
+- Persistenza: JPA/Hibernate + SQLite (`./data/jsaga.db`).
+- Stampa ESC/POS: `EscPosSerialPrintService` (abilitabile via `application.properties`).
 
-## Frontend (Angular)
-- Aree applicative:
-  - login;
-  - cassa operativa (UI touch-friendly);
-  - amministrazione prodotti/eventi;
-  - dashboard statistiche.
-- Struttura:
-  - `core` (auth, interceptor, guard);
-  - `shared` (componenti riusabili);
-  - `features` (cashier, admin, reports).
-- Stato applicativo iniziale: service-based + RxJS (senza over-engineering).
+### Frontend (Angular 20)
+- Standalone components + Signals (no NgRx).
+- Struttura: `core/` (service API) · `features/` (pagine).
+- Navigazione: Cassa come home (`/`), Admin dropdown (Dashboard/Prodotti/Eventi/Report).
+- Stato applicativo: service-based + RxJS.
 
-## 5) Modello dati iniziale (MVP)
-Entita principali:
-- User(id, username, passwordHash, role, enabled)
-- Event(id, name, date, status)
-- Product(id, name, category, price, active)
-- Sale(id, eventId, operatorId, createdAt, totalAmount, paymentType=CASH)
-- SaleItem(id, saleId, productId, productNameSnapshot, unitPrice, quantity, lineTotal)
-- Receipt(id, saleId, progressiveNumber, printedAt)
+### Build & Deploy
+- **Dev**: `./mvnw spring-boot:run` + `cd frontend && npm start` (proxy `/api` → `:8080`).
+- **Produzione (JAR unico)**: `./mvnw package -DskipTests` → `java -jar target/jSaga-*.jar`.
+- `frontend-maven-plugin` 1.15.1: `node install` → `npm ci` → `ng build` → `src/main/resources/static/`.
+- `SpaRoutingFilter`: forward GET senza estensione non-API → `/index.html`.
+- `DataInitializer`: seed 14 prodotti + 1 evento al primo avvio (DB vuoto).
+
+---
+
+## 5) Modello dati (MVP)
+| Entità | Campi principali |
+|--------|-----------------|
+| User | id, username, passwordHash, role (CASSIERE/ADMIN), enabled |
+| Event | id, name, eventDate, status (APERTO/CHIUSO) |
+| Product | id, name, category (GASTRONOMIA/BEVANDA/DOLCE/ALTRO), price, active |
+| Sale | id, eventId, operatorId, createdAt, totalAmount, paymentType=CASH |
+| SaleItem | id, saleId, productId, productNameSnapshot, unitPrice, quantity, lineTotal |
+| Receipt | id, saleId, progressiveNumber, printedAt |
 
 Note:
-- salvare snapshot nome/prezzo in `SaleItem` per preservare storico anche se il prodotto cambia;
+- snapshot nome/prezzo in `SaleItem` per preservare storico storico.
 - numerazione scontrino progressiva per evento.
-- prevedere tabella categorie o enum estendibile per filtri rapidi UI.
 
-## 6) Piano sviluppo per fasi
-## Fase 0 - Setup e baseline (0.5-1 giorno)
-- Definizione convenzioni (naming, branch strategy, PR checklist).
-- Configurazione ambienti dev (backend + frontend).
-- Setup CORS e profili Spring (`dev`, `test`, `prod`).
-- Seed dati demo (prodotti base, utente admin/cassiere).
+---
 
-Deliverable:
-- progetto avviabile in locale con login e health endpoint.
+## 6) Stato avanzamento per fasi
 
-## Fase 1 - Dominio prodotti ed eventi (1-2 giorni)
-- Backend:
-  - CRUD prodotti con validazioni.
-  - CRUD eventi con stato (APERTO/CHIUSO).
-- Frontend:
-  - schermata admin prodotti.
-  - schermata admin eventi.
+### Fase 0 - Setup e baseline ✅ COMPLETATA
+- [x] Configurazione ambienti dev (backend + frontend).
+- [x] Setup CORS e proxy Angular dev server.
+- [x] Seed dati demo (`DataInitializer`).
+- [x] Build automatizzato (`frontend-maven-plugin`).
+- [x] SPA routing in produzione (`SpaRoutingFilter`).
 
-Deliverable:
-- admin in grado di configurare catalogo e serata.
+### Fase 1 - Dominio prodotti ed eventi ✅ COMPLETATA
+- [x] CRUD prodotti backend (GET/POST/PUT/PATCH/DELETE).
+- [x] CRUD eventi backend (GET/POST/PUT/PATCH/DELETE).
+- [x] Frontend: schermata prodotti con tabella, modal form, toggle attivo, elimina con conferma.
+- [x] Frontend: schermata eventi con tabella, modal form, toggle stato, elimina con conferma.
 
-## Fase 2 - Flusso cassa e scontrino (2-3 giorni)
-- Backend:
-  - endpoint creazione vendita con righe.
-  - calcolo totale server-side.
-  - endpoint dettaglio/storico scontrini.
-  - gestione annullo solo prima della conferma vendita.
-- Frontend:
-  - schermata cassa touch-friendly.
-  - filtri rapidi per categoria prodotto.
-  - riepilogo carrello e conferma pagamento contanti.
-  - stampa scontrino via template HTML.
-  - supporto stampa termica ESC/POS.
+### Fase 2 - Flusso cassa e scontrino 🔶 IN CORSO
+- [x] Frontend cassa: griglia prodotti touch-friendly con filtri categoria.
+- [x] Frontend cassa: carrello sticky con add/remove/qty, totale live.
+- [x] Frontend cassa: modal scontrino HTML stampabile (browser print) — *mock locale, no backend*.
+- [ ] **Backend**: endpoint `POST /api/v1/sales` (creazione vendita con righe).
+- [ ] **Backend**: calcolo totale server-side.
+- [ ] **Backend**: `GET /api/v1/sales/{id}` (dettaglio scontrino).
+- [ ] **Backend**: `GET /api/v1/sales?eventId=X` (storico vendite per evento).
+- [ ] **Backend**: numerazione scontrino progressiva per evento.
+- [ ] **Frontend**: collegare il "Conferma pagamento" a `POST /api/v1/sales` (oggi è mock).
+- [ ] **Frontend**: storico scontrini per evento.
+- [ ] **Stampa**: supporto stampante termica ESC/POS (backend già predisposto).
 
-Deliverable:
-- vendita completa end-to-end con scontrino stampabile.
+### Fase 3 - Report base e hardening ⬜ DA INIZIARE
+- [ ] Backend: KPI vendite per evento (totale incassato, nr scontrini, top prodotti).
+- [ ] Backend: confronto base tra eventi.
+- [ ] Frontend: dashboard statistiche collegata a API vendite reali.
+- [ ] Frontend: pagina Report completata.
+- [ ] Gestione errori utente (toast/banner su errori API).
+- [ ] Controllo autorizzazioni pagine/API (auth e guard route).
 
-## Fase 3 - Report base e hardening (1-2 giorni)
-- Backend:
-  - KPI vendite per evento.
-  - KPI confronto base tra eventi.
-  - endpoint top prodotti.
-- Frontend:
-  - dashboard sintetica.
-- Hardening:
-  - gestione errori e messaggi utente.
-  - controllo autorizzazioni pagine/API.
+### Auth ⬜ DA INIZIARE
+- [ ] Backend: entità User + Spring Security (username/password, ruoli CASSIERE/ADMIN).
+- [ ] Backend: login endpoint + sessione/JWT.
+- [ ] Frontend: pagina login.
+- [ ] Frontend: guard route (admin protetto).
+- [ ] Frontend: header/interceptor con token.
 
-Deliverable:
-- MVP pronto per prova sul campo.
+---
 
-## 7) Piano test (Essenziale: Unit + Smoke)
-## Obiettivo
-Ridurre regressioni sulle funzionalita core (vendita e totale) mantenendo feedback rapido.
+## 7) Piano test
 
-## Test backend (JUnit + Spring Test)
-- Unit test servizi dominio:
-  - calcolo totale vendita;
-  - validazioni input;
-  - numerazione progressiva scontrino.
-- Repository test mirati (se logica query non banale).
-- Smoke integration test API principali:
-  - login;
-  - CRUD prodotto base;
-  - creazione vendita con 2-3 righe.
+### Backend (JUnit + Spring Test)
+- Unit test servizi dominio: calcolo totale vendita, validazioni input, numerazione progressiva.
+- Repository test (se logica query non banale).
+- Smoke integration test: login, CRUD prodotto base, creazione vendita 2-3 righe.
+- Target: copertura logica business critica ≥ 70% sui service del dominio vendita.
 
-Target minimo iniziale:
-- copertura logica business critica >= 70% sui service del dominio vendita.
+### Frontend (Angular)
+- Unit test: carrello cassa, calcolo subtotale/totale, stato prodotto attivo.
+- Smoke test UI (manuale o Cypress minimale): login, creazione vendita, stampa scontrino.
 
-## Test frontend (Angular)
-- Unit test componenti/servizi critici:
-  - carrello cassa;
-  - calcolo subtotale/totale;
-  - gestione stato prodotto attivo.
-- Smoke test UI (manuale guidato o Cypress minimale):
-  - login come cassiere;
-  - creazione vendita;
-  - stampa scontrino.
+### Test di accettazione operativa (pre-evento)
+- 2 dispositivi simultanei (tablet + smartphone).
+- Flusso vendita continuo per almeno 30 minuti.
+- Verifica stampa su stampante prevista.
+- Controllo report fine serata coerente con scontrini.
 
-## Test di accettazione operativa (pre-evento)
-Checklist rapida su rete locale reale:
-- 2 dispositivi simultanei (tablet + smartphone);
-- flusso vendita continuo per almeno 30 minuti;
-- verifica stampa su stampante prevista;
-- controllo report fine serata coerente con scontrini.
+---
 
 ## 8) Definition of Done (DoD)
-Una user story e completata quando:
+Una user story è completata quando:
 - requisito funzionale implementato;
 - test unitari pertinenti presenti e verdi;
 - smoke test del flusso non regressivo;
 - gestione errori utente minima presente;
 - documentazione endpoint/UI aggiornata.
 
-## 9) Backlog tecnico iniziale
-- [ ] Definire schema DB iniziale e migrazioni (Flyway consigliato).
-- [ ] Implementare security base (JWT o sessione server-side).
-- [ ] Implementare CRUD prodotti backend + frontend.
-- [ ] Implementare categorie prodotto con filtri rapidi in cassa.
-- [ ] Implementare CRUD eventi backend + frontend.
-- [ ] Implementare vendita e generazione scontrino.
-- [ ] Implementare annullo solo pre-conferma.
-- [ ] Implementare stampa scontrino HTML + ESC/POS.
-- [ ] Implementare dashboard statistiche evento + confronto base eventi.
-- [ ] Scrivere test unit + smoke MVP.
-- [ ] Eseguire prova operativa su LAN.
+---
 
-## 10) Decisioni bloccate per MVP
-1. Database: SQLite.
-2. Stampa: browser + supporto ESC/POS subito.
-3. Categorie predefinite: si, con filtri rapidi in cassa.
-4. Autenticazione: semplice username/password.
+## 9) Backlog tecnico aggiornato
+
+### Priorità ALTA (blocca MVP)
+- [ ] Backend modulo Vendite: `Sale`, `SaleItem`, `Receipt` + endpoint REST.
+- [ ] Backend: numerazione progressiva scontrino per evento.
+- [ ] Frontend: collegare cassa a `POST /api/v1/sales`.
+- [ ] Auth: Spring Security + login frontend.
+
+### Priorità MEDIA
+- [ ] Dashboard KPI vendite reali (dopo modulo Vendite).
+- [ ] Pagina Report completata.
+- [ ] Storico scontrini per evento.
+- [ ] Stampa ESC/POS dal frontend.
+- [ ] Gestione errori API (toast/banner globale via interceptor Angular).
+
+### Priorità BASSA (post-MVP)
+- [ ] Skip npm ci con property Maven (`-Dfrontend.skip.install=true`) per avvii veloci.
+- [ ] Profilo Spring `prod` con logging ridotto.
+- [ ] Test unit frontend (carrello, calcolo totale).
+- [ ] Smoke Cypress minimale.
+
+---
+
+## 10) Comandi di riferimento
+
+```bash
+# Dev (due terminali)
+./mvnw spring-boot:run              # backend :8080 (+ Angular build automatico)
+cd frontend && npm start            # dev server :4200 con proxy + hot reload
+
+# Produzione
+./mvnw package -DskipTests         # build tutto → JAR
+java -jar target/jSaga-*.jar       # serve su :8080
+
+# Solo Angular
+cd frontend && npm run build        # output → src/main/resources/static/
+```
+
+---
+
+## 11) Decisioni architetturali prese
+1. Database: SQLite (`./data/jsaga.db`, gitignored).
+2. Stampa: browser print (implementato) + ESC/POS (predisposto, da collegare).
+3. Categorie prodotto: enum fisso GASTRONOMIA/BEVANDA/DOLCE/ALTRO con filtri rapidi in cassa.
+4. Autenticazione: username/password semplice — da implementare nella prossima fase.
 5. Annulli: solo prima della conferma vendita.
 6. Statistiche: evento corrente + confronto base tra eventi.
-
-## 11) Prossimi passi operativi
-- Avviare Fase 0 con setup ambienti e convenzioni.
-- Creare backlog tecnico in issue/task separati per Fasi 1-3.
-- Avviare implementazione Fase 1 (CRUD prodotti/eventi).
+7. Build: `frontend-maven-plugin` integrato in Maven, `ng build` → `static/`.
+8. SPA routing: `SpaRoutingFilter` (forward → `index.html` per route non-API senza estensione).
+9. Stato Angular: Signals + service-based, nessun NgRx.
+10. `spring-boot:run` include automaticamente il build Angular (lifecycle fork a `test-compile`).
