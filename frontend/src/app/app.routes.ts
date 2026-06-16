@@ -7,8 +7,8 @@ import { ProductsPageComponent } from './features/products-page.component';
 import { ReportsPageComponent } from './features/reports-page.component';
 
 export const routes: Routes = [
-	{ path: '', component: DashboardPageComponent },
-	{ path: 'cassa', component: CashierPageComponent },
+	{ path: '', component: CashierPageComponent },
+	{ path: 'dashboard', component: DashboardPageComponent },
 	{ path: 'prodotti', component: ProductsPageComponent },
 	{ path: 'eventi', component: EventsPageComponent },
 	{ path: 'report', component: ReportsPageComponent },

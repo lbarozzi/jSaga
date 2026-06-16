@@ -1,31 +1,121 @@
 <section class="page-head card">
-  <h2>Prodotti</h2>
-  <p>Catalogo live dal backend Spring.</p>
+  <div>
+    <h2>Prodotti</h2>
+    <p>Catalogo prodotti con CRUD completo.</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="openCreate()">+ Aggiungi prodotto</button>
 </section>
 
 <section class="card table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Categoria</th>
-        <th>Prezzo</th>
-        <th>Stato</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of products$ | async; track item.id) {
+  @if (loading()) {
+    <p class="status-msg">Caricamento…</p>
+  } @else if (error()) {
+    <p class="status-msg error">{{ error() }}</p>
+  } @else if (products().length === 0) {
+    <p class="status-msg">Nessun prodotto. Crea il primo!</p>
+  } @else {
+    <table>
+      <thead>
         <tr>
-          <td>{{ item.name }}</td>
-          <td>{{ item.category }}</td>
-          <td>{{ item.price | currency: 'EUR' }}</td>
-          <td>
-            <span class="badge" [ngClass]="item.active ? 'on' : 'off'">
-              {{ item.active ? 'Attivo' : 'Disattivo' }}
-            </span>
-          </td>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Prezzo</th>
+          <th>Stato</th>
+          <th>Azioni</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (p of products(); track p.id) {
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ categoryLabel(p.category) }}</td>
+            <td>{{ p.price | currency: 'EUR' }}</td>
+            <td>
+              <button
+                type="button"
+                class="badge"
+                [ngClass]="p.active ? 'on' : 'off'"
+                (click)="toggleActive(p)"
+                title="Clicca per cambiare stato"
+              >
+                {{ p.active ? 'Attivo' : 'Disattivo' }}
+              </button>
+            </td>
+            <td class="actions-cell">
+              <button type="button" class="btn-icon" (click)="openEdit(p)" title="Modifica">✎</button>
+              @if (deleteConfirmId() === p.id) {
+                <span class="confirm-delete">
+                  Elimina?
+                  <button type="button" class="btn-danger-sm" (click)="doDelete(p.id)">Sì</button>
+                  <button type="button" class="btn-ghost-sm" (click)="cancelDelete()">No</button>
+                </span>
+              } @else {
+                <button type="button" class="btn-icon danger" (click)="confirmDelete(p.id)" title="Elimina">✕</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 </section>
+
+<!-- Modal create/edit -->
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="modalOpen.set(false)">
+    <div class="modal-box card" (click)="$event.stopPropagation()">
+      <h3>{{ modalMode() === 'create' ? 'Nuovo prodotto' : 'Modifica prodotto' }}</h3>
+
+      <form (ngSubmit)="save()" #f="ngForm">
+        <div class="field">
+          <label for="p-name">Nome</label>
+          <input
+            id="p-name"
+            type="text"
+            [(ngModel)]="form.name"
+            name="name"
+            required
+            maxlength="120"
+            placeholder="es. Panino con salsiccia"
+          />
+        </div>
+
+        <div class="field">
+          <label for="p-cat">Categoria</label>
+          <select id="p-cat" [(ngModel)]="form.category" name="category">
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ categoryLabel(cat) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="p-price">Prezzo (EUR)</label>
+          <input
+            id="p-price"
+            type="number"
+            [(ngModel)]="form.price"
+            name="price"
+            required
+            min="0.01"
+            step="0.10"
+          />
+        </div>
+
+        <div class="field field-check">
+          <label>
+            <input type="checkbox" [(ngModel)]="form.active" name="active" />
+            Prodotto attivo
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" (click)="modalOpen.set(false)">Annulla</button>
+          <button type="submit" class="btn-primary" [disabled]="saving() || f.invalid">
+            {{ saving() ? 'Salvataggio…' : 'Salva' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

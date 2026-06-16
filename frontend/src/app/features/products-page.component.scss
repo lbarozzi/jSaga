@@ -1,10 +1,11 @@
-.page-head h2 {
-  margin: 0;
-}
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 
-.page-head p {
-  margin: 0.4rem 0 0;
-  color: var(--muted-ink);
+  h2 { margin: 0; }
+  p  { margin: 0.3rem 0 0; color: var(--muted-ink); font-size: 0.9rem; }
 }
 
 .table-wrap {
@@ -12,20 +13,27 @@
   overflow-x: auto;
 }
 
+.status-msg {
+  color: var(--muted-ink);
+  padding: 1.5rem 0;
+  text-align: center;
+
+  &.error { color: var(--accent-ink); }
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
 
-th,
-td {
+th, td {
   text-align: left;
-  padding: 0.8rem;
-  border-bottom: 1px solid rgba(20, 20, 20, 0.1);
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.08);
 }
 
 th {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted-ink);
@@ -34,17 +42,155 @@ th {
 .badge {
   display: inline-block;
   border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.7rem;
   font-weight: 700;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+
+  &.on  { background: rgba(57, 168, 84, 0.18); color: #145125; }
+  &.off { background: rgba(180, 70, 40, 0.14); color: #7d2f1a; }
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(20, 20, 20, 0.1);
+  border-radius: 8px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-ink);
+
+  &.danger { color: var(--accent-ink); }
+  &:hover  { background: rgba(20, 20, 20, 0.07); }
+}
+
+.confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.btn-danger-sm {
+  border: none;
+  background: var(--accent-ink);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
   font-size: 0.8rem;
 }
 
-.badge.on {
-  background: rgba(57, 168, 84, 0.2);
-  color: #145125;
+.btn-ghost-sm {
+  border: 1px solid rgba(20, 20, 20, 0.15);
+  background: transparent;
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
 }
 
-.badge.off {
-  background: rgba(180, 70, 40, 0.15);
-  color: #7d2f1a;
+/* Buttons */
+.btn-primary {
+  border: none;
+  border-radius: 12px;
+  padding: 0.55rem 1.1rem;
+  font-weight: 700;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: var(--accent-ink);
+  color: #fff;
+  white-space: nowrap;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-ghost {
+  border: 1px solid rgba(20, 20, 20, 0.15);
+  border-radius: 12px;
+  padding: 0.55rem 1.1rem;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-ink);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 20, 10, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal-box {
+  width: min(440px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+
+  h3 { margin: 0 0 1.2rem; }
+}
+
+form { display: flex; flex-direction: column; gap: 1rem; }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--muted-ink);
+  }
+
+  input[type='text'],
+  input[type='number'],
+  select {
+    border: 1px solid rgba(20, 20, 20, 0.18);
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-ink);
+    outline: none;
+
+    &:focus { border-color: var(--accent-ink); }
+  }
+}
+
+.field-check label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-ink);
+  cursor: pointer;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }

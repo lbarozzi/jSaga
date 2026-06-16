@@ -1,23 +1,70 @@
 <section class="hero card">
   <p class="label">Oratorio Cash Desk</p>
-  <h1>Console operativa festa</h1>
-  <p>
-    Frontend MVP pronto per cassa, prodotti, eventi e report. Questa pagina e il punto di partenza
-    per il turno serale.
-  </p>
+  <h1>Dashboard amministrativa</h1>
+  <p>Stato in tempo reale di eventi e catalogo prodotti.</p>
 </section>
 
-<section class="kpi-grid">
-  <article class="card kpi">
-    <p>Incasso giornata</p>
-    <strong>EUR 0.00</strong>
-  </article>
-  <article class="card kpi">
-    <p>Scontrini emessi</p>
-    <strong>0</strong>
-  </article>
-  <article class="card kpi">
-    <p>Evento aperto</p>
-    <strong>Nessuno</strong>
-  </article>
-</section>
+@if (loading()) {
+  <p class="loading-msg">Caricamento…</p>
+} @else {
+  <div class="kpi-grid">
+    <article class="card kpi">
+      <p>Serate create</p>
+      <strong>{{ events().length }}</strong>
+    </article>
+    <article class="card kpi accent">
+      <p>Serate aperte</p>
+      <strong>{{ openEvents().length }}</strong>
+    </article>
+    <article class="card kpi">
+      <p>Prodotti attivi</p>
+      <strong>{{ activeProducts().length }}</strong>
+    </article>
+    <article class="card kpi">
+      <p>Prodotti totali</p>
+      <strong>{{ products().length }}</strong>
+    </article>
+  </div>
+
+  <!-- Serate aperte -->
+  @if (openEvents().length > 0) {
+    <section class="card section-card">
+      <h2>Serate aperte</h2>
+      <ul class="event-list">
+        @for (ev of openEvents(); track ev.id) {
+          <li class="event-item">
+            <span class="ev-name">{{ ev.name }}</span>
+            <span class="ev-date">{{ ev.eventDate | date: 'dd/MM/yyyy' }}</span>
+            <span class="badge on">APERTO</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- Prodotti per categoria -->
+  @if (productsByCategory().length > 0) {
+    <section class="card section-card">
+      <h2>Prodotti per categoria</h2>
+      <ul class="cat-list">
+        @for (entry of productsByCategory(); track entry.cat) {
+          <li class="cat-item">
+            <span class="cat-name">{{ categoryLabel(entry.cat) }}</span>
+            <div class="cat-bar-wrap">
+              <div
+                class="cat-bar"
+                [style.width.%]="(entry.count / activeProducts().length) * 100"
+              ></div>
+            </div>
+            <span class="cat-count">{{ entry.count }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <p class="note">
+    I KPI vendite (incasso, scontrini emessi, top prodotti) saranno disponibili dopo
+    l'implementazione del modulo Vendite nel backend.
+  </p>
+}

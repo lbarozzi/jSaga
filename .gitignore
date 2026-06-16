@@ -1,5 +1,11 @@
 HELP.md
 target/
+
+# SQLite database (runtime data)
+data/jsaga.db
+
+# Angular production build output (generated, do not commit)
+src/main/resources/static/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

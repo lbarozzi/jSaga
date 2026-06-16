@@ -1,16 +1,109 @@
 <section class="page-head card">
-  <h2>Eventi</h2>
-  <p>Gestione serate con stato apertura/chiusura.</p>
+  <div>
+    <h2>Eventi</h2>
+    <p>Gestione serate con apertura/chiusura cassa.</p>
+  </div>
+  <button type="button" class="btn-primary" (click)="openCreate()">+ Nuovo evento</button>
 </section>
 
-<section class="grid">
-  @for (event of events$ | async; track event.id) {
-    <article class="card event-card">
-      <h3>{{ event.name }}</h3>
-      <p class="date">{{ event.eventDate | date: 'dd/MM/yyyy' }}</p>
-      <span class="badge" [ngClass]="event.status === 'APERTO' ? 'on' : 'off'">
-        {{ event.status }}
-      </span>
-    </article>
+<section class="card table-wrap">
+  @if (loading()) {
+    <p class="status-msg">Caricamento…</p>
+  } @else if (error()) {
+    <p class="status-msg error">{{ error() }}</p>
+  } @else if (events().length === 0) {
+    <p class="status-msg">Nessun evento. Crea la prima serata!</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Data</th>
+          <th>Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ev of events(); track ev.id) {
+          <tr>
+            <td>{{ ev.name }}</td>
+            <td>{{ ev.eventDate | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              <button
+                type="button"
+                class="badge"
+                [ngClass]="ev.status === 'APERTO' ? 'on' : 'off'"
+                (click)="toggleStatus(ev)"
+                title="Clicca per cambiare stato"
+              >
+                {{ ev.status }}
+              </button>
+            </td>
+            <td class="actions-cell">
+              <button type="button" class="btn-icon" (click)="openEdit(ev)" title="Modifica">✎</button>
+              @if (deleteConfirmId() === ev.id) {
+                <span class="confirm-delete">
+                  Elimina?
+                  <button type="button" class="btn-danger-sm" (click)="doDelete(ev.id)">Sì</button>
+                  <button type="button" class="btn-ghost-sm" (click)="cancelDelete()">No</button>
+                </span>
+              } @else {
+                <button type="button" class="btn-icon danger" (click)="confirmDelete(ev.id)" title="Elimina">✕</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
   }
 </section>
+
+<!-- Modal create/edit -->
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="modalOpen.set(false)">
+    <div class="modal-box card" (click)="$event.stopPropagation()">
+      <h3>{{ modalMode() === 'create' ? 'Nuovo evento' : 'Modifica evento' }}</h3>
+
+      <form (ngSubmit)="save()" #f="ngForm">
+        <div class="field">
+          <label for="ev-name">Nome serata</label>
+          <input
+            id="ev-name"
+            type="text"
+            [(ngModel)]="form.name"
+            name="name"
+            required
+            maxlength="120"
+            placeholder="es. Sagra di San Giovanni"
+          />
+        </div>
+
+        <div class="field">
+          <label for="ev-date">Data</label>
+          <input
+            id="ev-date"
+            type="date"
+            [(ngModel)]="form.eventDate"
+            name="eventDate"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="ev-status">Stato</label>
+          <select id="ev-status" [(ngModel)]="form.status" name="status">
+            <option value="APERTO">Aperto</option>
+            <option value="CHIUSO">Chiuso</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" (click)="modalOpen.set(false)">Annulla</button>
+          <button type="submit" class="btn-primary" [disabled]="saving() || f.invalid">
+            {{ saving() ? 'Salvataggio…' : 'Salva' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

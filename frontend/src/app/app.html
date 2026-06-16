@@ -8,11 +8,27 @@
     </div>
 
     <nav>
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-      <a routerLink="/cassa" routerLinkActive="active">Cassa</a>
-      <a routerLink="/prodotti" routerLinkActive="active">Prodotti</a>
-      <a routerLink="/eventi" routerLinkActive="active">Eventi</a>
-      <a routerLink="/report" routerLinkActive="active">Report</a>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Cassa</a>
+
+      <div class="admin-menu">
+        <button
+          class="admin-btn"
+          [class.active]="adminOpen()"
+          (click)="toggleAdmin()"
+          type="button"
+        >
+          Admin
+          <span class="chevron" [class.up]="adminOpen()">&#8964;</span>
+        </button>
+        @if (adminOpen()) {
+          <div class="dropdown card">
+            <a routerLink="/dashboard" (click)="adminOpen.set(false)">Dashboard</a>
+            <a routerLink="/prodotti" (click)="adminOpen.set(false)">Prodotti</a>
+            <a routerLink="/eventi" (click)="adminOpen.set(false)">Eventi</a>
+            <a routerLink="/report" (click)="adminOpen.set(false)">Report</a>
+          </div>
+        }
+      </div>
     </nav>
   </header>
 
