@@ -10,6 +10,7 @@ import com.github.anastaciocintra.escpos.image.Bitonal;
 import com.github.anastaciocintra.escpos.image.BitonalThreshold;
 import com.github.anastaciocintra.escpos.image.CoffeeImageImpl;
 import com.github.anastaciocintra.escpos.image.EscPosImage;
+import com.github.anastaciocintra.output.PrinterOutputStream;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,24 +34,26 @@ import java.nio.file.Files;
 
 
 @Service
-@EnableConfigurationProperties(EscPosSerialProperties.class)
-public class EscPosSerialPrintService {
+@EnableConfigurationProperties(EscPosProperties.class)
+public class EscPosPrintService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-    private final EscPosSerialProperties properties;
+    private final EscPosProperties properties;
 
-    public EscPosSerialPrintService(EscPosSerialProperties properties) {
+    public EscPosPrintService(EscPosProperties properties) {
         this.properties = properties;
     }
 
     public void printOrder(String title, List<PrintLine> lines, BigDecimal totalAmount) {
         if (!properties.isEnabled()) {
-            throw new EscPosPrinterException("ESC/POS serial printing is disabled. Set jsaga.print.escpos.serial.enabled=true");
+            throw new EscPosPrinterException("ESC/POS printing is disabled. Set jsaga.print.escpos.enabled=true");
         }
 
-        SerialPort serialPort = openSerialPort();
-        try (OutputStream outputStream = serialPort.getOutputStream(); EscPos escPos = new EscPos(outputStream)) {
+        SerialPort serialPort = properties.isSerialEnabled() ? openSerialPort() : null;
+        try (OutputStream outputStream = this.properties.isSystemPrintEnabled() ? 
+                                            new PrinterOutputStream(PrinterOutputStream.getPrintServiceByName(this.properties.getPrinterName())): 
+                                            serialPort.getOutputStream(); EscPos escPos = new EscPos(outputStream)) {
             RasterBitImageWrapper bitImageWrapper = new RasterBitImageWrapper();
             var algorithm = new BitonalThreshold(150);
             escPos.writeLF(title);
@@ -152,16 +155,16 @@ private static BufferedImage resizeIfTooWide(BufferedImage src, int maxWidth) {
     //*************************
 
     private SerialPort openSerialPort() {
-        SerialPort serialPort = SerialPort.getCommPort(properties.getPort());
+        SerialPort serialPort = SerialPort.getCommPort(properties.getSerialPort());
         serialPort.setComPortParameters(
-                properties.getBaudRate(),
-                properties.getDataBits(),
-                resolveStopBits(properties.getStopBits()),
-                resolveParity(properties.getParity()));
+                properties.getSerialBaudRate(),
+                properties.getSerialDataBits(),
+                resolveStopBits(properties.getSerialStopBits()),
+                resolveParity(properties.getSerialParity()));
         serialPort.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 0);
 
         if (!serialPort.openPort()) {
-            throw new EscPosPrinterException("Cannot open serial port: " + properties.getPort());
+            throw new EscPosPrinterException("Cannot open serial port: " + properties.getSerialPort());
         }
 
         return serialPort;

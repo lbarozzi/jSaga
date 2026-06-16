@@ -2,7 +2,7 @@ package it.fourlab.jsaga.order;
 
 import it.fourlab.jsaga.common.ResourceNotFoundException;
 import it.fourlab.jsaga.printing.EscPosPrinterException;
-import it.fourlab.jsaga.printing.EscPosSerialPrintService;
+import it.fourlab.jsaga.printing.EscPosPrintService;
 import it.fourlab.jsaga.printing.PrintLine;
 import it.fourlab.jsaga.product.Product;
 import it.fourlab.jsaga.product.ProductRepository;
@@ -23,11 +23,11 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final EscPosSerialPrintService printService;
+    private final EscPosPrintService printService;
 
     public OrderService(OrderRepository orderRepository,
                         ProductRepository productRepository,
-                        EscPosSerialPrintService printService) {
+                        EscPosPrintService printService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.printService = printService;
