@@ -20,7 +20,7 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponse createOrder(@Valid @RequestBody OrderRequest request) {
-        return orderService.createOrder(request);
+        return  orderService.createOrder(request);
     }
 
     @PostMapping("/{id}/print")

@@ -106,8 +106,10 @@ export class CashierPageComponent implements OnInit {
     this.api.submitOrder(req).subscribe({
       next: (order) => {
         this.lastOrder.set(order);
-        this.receiptNumber.update((n) => n + 1);
-        this.receiptTime.set(new Date());
+        //this.receiptNumber.update((n) => n + 1);
+        this.receiptNumber.set(order.id);
+        //this.receiptTime.set(new Date());
+        this.receiptTime.set(order.createdAt ? new Date(order.createdAt) : new Date());
         this.printStatus.set(order.printed ? 'ok' : 'idle');
         this.showReceipt.set(true);
         this.orderLoading.set(false);
