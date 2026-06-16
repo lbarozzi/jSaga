@@ -30,6 +30,35 @@ export interface EventRequest {
   status: 'APERTO' | 'CHIUSO';
 }
 
+export interface OrderItemRequest {
+  productId: number;
+  qty: number;
+}
+
+export interface OrderRequest {
+  eventId?: number | null;
+  items: OrderItemRequest[];
+  paymentMethod: string;
+}
+
+export interface OrderItemResponse {
+  productId: number;
+  productName: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface OrderResponse {
+  id: number;
+  eventId: number | null;
+  items: OrderItemResponse[];
+  totalAmount: number;
+  paymentMethod: string;
+  createdAt: string;
+  printed: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class JsagaApiService {
   private readonly http = inject(HttpClient);
@@ -81,5 +110,14 @@ export class JsagaApiService {
 
   deleteEvent(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/events/${id}`);
+  }
+
+  // Orders
+  submitOrder(req: OrderRequest): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(`${this.baseUrl}/orders`, req);
+  }
+
+  printOrder(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/orders/${id}/print`, null);
   }
 }

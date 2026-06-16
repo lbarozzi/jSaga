@@ -126,16 +126,18 @@
 .cart-panel {
   position: sticky;
   top: 1rem;
-  height: calc(100dvh - 25rem);
+  height: calc(100dvh - 6rem);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cart-title {
   margin: 0;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .empty-cart {
@@ -150,11 +152,12 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
+  display: fixed;
+  height: calc(100% - 10rem);
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   min-height: 0;
 }
 
@@ -231,6 +234,7 @@
 .total-box {
   border-top: 2px solid rgba(20, 20, 20, 0.1);
   padding-top: 0.6rem;
+  flex-shrink: 0;
 }
 
 .total-label {
@@ -257,6 +261,7 @@
   background: var(--accent-ink);
   color: #fff;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 
   &:disabled {
     opacity: 0.4;
@@ -275,6 +280,7 @@
   cursor: pointer;
   background: transparent;
   color: var(--muted-ink);
+  flex-shrink: 0;
 }
 
 /* Modal */
@@ -373,6 +379,32 @@
   cursor: pointer;
   background: transparent;
   color: var(--accent-ink);
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.printer-btn {
+  background: var(--accent-ink);
+  color: #fff;
+}
+
+.order-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
+  text-align: center;
+}
+
+.print-feedback {
+  font-size: 0.82rem;
+  text-align: center;
+  margin: 0;
+
+  &.ok    { color: #27ae60; }
+  &.error { color: #c0392b; }
 }
 
 .close-btn {

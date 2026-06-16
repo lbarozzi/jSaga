@@ -44,7 +44,7 @@ public class EscPosSerialPrintService {
         this.properties = properties;
     }
 
-    public void printSimpleReceipt(String title, List<String> lines, BigDecimal totalAmount) {
+    public void printOrder(String title, List<PrintLine> lines, BigDecimal totalAmount) {
         if (!properties.isEnabled()) {
             throw new EscPosPrinterException("ESC/POS serial printing is disabled. Set jsaga.print.escpos.serial.enabled=true");
         }
@@ -57,11 +57,11 @@ public class EscPosSerialPrintService {
             escPos.writeLF("Data: " + LocalDateTime.now().format(DATE_TIME_FORMATTER));
             escPos.writeLF("------------------------------");
 
-            for (String line : lines) {
-                BufferedImage rigaScontrino = createLineItemImage(1, "Caffe Arabica 100% - macinato", 1.90, 384);
+            for (PrintLine line : lines) {
+                BufferedImage rigaScontrino = createLineItemImage(
+                        line.qty(), line.name(), line.unitPrice().doubleValue(), 384);
                 EscPosImage escposLineImage = new EscPosImage(new CoffeeImageImpl(rigaScontrino), algorithm);
                 escPos.write(bitImageWrapper, escposLineImage);
-                //escPos.writeLF(line);
             }
 
             escPos.writeLF("------------------------------");

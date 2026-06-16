@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
 
-import { JsagaApiService, Product } from '../core/jsaga-api.service';
+import { JsagaApiService, OrderResponse, Product } from '../core/jsaga-api.service';
 
 export interface CartLine {
   product: Product;
@@ -32,6 +32,11 @@ export class CashierPageComponent implements OnInit {
   readonly showReceipt = signal(false);
   readonly receiptTime = signal<Date | null>(null);
   readonly receiptNumber = signal(0);
+  readonly orderLoading = signal(false);
+  readonly orderError = signal<string | null>(null);
+  readonly lastOrder = signal<OrderResponse | null>(null);
+  readonly printLoading = signal(false);
+  readonly printStatus = signal<'idle' | 'ok' | 'error'>('idle');
 
   readonly filteredProducts = computed(() => {
     const cat = this.activeCategory();
@@ -88,15 +93,55 @@ export class CashierPageComponent implements OnInit {
   }
 
   confirmPayment() {
-    if (this.cart().length === 0) return;
-    this.receiptNumber.update((n) => n + 1);
-    this.receiptTime.set(new Date());
-    this.showReceipt.set(true);
+    if (this.cart().length === 0 || this.orderLoading()) return;
+    this.orderLoading.set(true);
+    this.orderError.set(null);
+
+    const req = {
+      eventId: null,
+      paymentMethod: 'CONTANTI',
+      items: this.cart().map((l) => ({ productId: l.product.id, qty: l.qty })),
+    };
+
+    this.api.submitOrder(req).subscribe({
+      next: (order) => {
+        this.lastOrder.set(order);
+        this.receiptNumber.update((n) => n + 1);
+        this.receiptTime.set(new Date());
+        this.printStatus.set(order.printed ? 'ok' : 'idle');
+        this.showReceipt.set(true);
+        this.orderLoading.set(false);
+      },
+      error: () => {
+        this.orderError.set('Errore durante il salvataggio dell\'ordine. Riprova.');
+        this.orderLoading.set(false);
+      },
+    });
   }
 
   closeReceipt() {
     this.showReceipt.set(false);
+    this.printStatus.set('idle');
+    this.lastOrder.set(null);
     this.cart.set([]);
+  }
+
+  printOnPrinter() {
+    const order = this.lastOrder();
+    if (!order || this.printLoading()) return;
+    this.printLoading.set(true);
+    this.printStatus.set('idle');
+
+    this.api.printOrder(order.id).subscribe({
+      next: () => {
+        this.printStatus.set('ok');
+        this.printLoading.set(false);
+      },
+      error: () => {
+        this.printStatus.set('error');
+        this.printLoading.set(false);
+      },
+    });
   }
 
   printReceipt() {

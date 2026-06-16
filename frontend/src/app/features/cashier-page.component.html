@@ -58,8 +58,8 @@
               <button type="button" class="qty-btn" (click)="removeOne(line.product.id)">−</button>
               <span class="line-qty">{{ line.qty }}</span>
               <button type="button" class="qty-btn" (click)="addToCart(line.product)">+</button>
-              <span class="line-total">{{ line.product.price * line.qty | currency: 'EUR' }}</span>
               <button type="button" class="remove-btn" (click)="removeLine(line.product.id)" title="Rimuovi">✕</button>
+              <span class="line-total">{{ line.product.price * line.qty | currency: 'EUR' }}</span>
             </div>
           </li>
         }
@@ -74,13 +74,17 @@
     <button
       type="button"
       class="confirm-btn"
-      [disabled]="cart().length === 0"
+      [disabled]="cart().length === 0 || orderLoading()"
       (click)="confirmPayment()"
     >
-      Conferma pagamento contanti
+      @if (orderLoading()) { Salvataggio… } @else { Conferma pagamento contanti }
     </button>
 
-    @if (cart().length > 0) {
+    @if (orderError()) {
+      <p class="order-error">{{ orderError() }}</p>
+    }
+
+    @if (cart().length > 0 && !orderLoading()) {
       <button type="button" class="clear-btn" (click)="cart.set([])">Svuota carrello</button>
     }
   </aside>
@@ -114,7 +118,6 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="print-btn" (click)="printReceipt()">Stampa</button>
         <button type="button" class="close-btn" (click)="closeReceipt()">Nuova vendita</button>
       </div>
     </div>
