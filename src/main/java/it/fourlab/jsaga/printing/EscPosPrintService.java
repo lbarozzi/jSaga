@@ -2,13 +2,19 @@ package it.fourlab.jsaga.printing;
 
 import com.github.anastaciocintra.escpos.EscPos;
 import com.github.anastaciocintra.escpos.barcode.BarCode;
+import com.github.anastaciocintra.escpos.image.Bitonal;
+import com.github.anastaciocintra.escpos.image.BitonalThreshold;
 import com.github.anastaciocintra.escpos.image.CoffeeImageImpl;
 import com.github.anastaciocintra.escpos.image.EscPosImage;
 import com.github.anastaciocintra.escpos.image.RasterBitImageWrapper;
-import com.github.anastaciocintra.escpos.image.Bitonal;
-import com.github.anastaciocintra.escpos.image.BitonalThreshold;
 import com.github.anastaciocintra.output.PrinterOutputStream;
-
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,21 +26,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import javax.imageio.ImageIO;
-import java.io.File;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
+
+
+
 
 
 
@@ -179,7 +179,7 @@ public class EscPosPrintService {
         return resized;
     }
 
-    private static BufferedImage createLineItemImage(int quantita, String descrizione, double prezzoUnitario, int larghezzaPx) {
+    private static BufferedImage createLineItemElips(int quantita, String descrizione, double prezzoUnitario, int larghezzaPx) {
         int altezzaPx = 30;
         int padding = 1;
         int colonnaQta = 28;
@@ -214,6 +214,53 @@ public class EscPosPrintService {
         g2d.dispose();
         return lineImage;
     }
+
+    private static BufferedImage createLineItemImage(int quantita, String descrizione, double prezzoUnitario, int larghezzaPx) {
+        int altezzaRigaPx = 30;
+        int padding = 1;
+        int colonnaQta = 28;
+        int colonnaEuro = 18;
+        int colonnaPrezzo = 84;
+        int colonnaDescrizione = larghezzaPx - (padding * 2) - colonnaQta - colonnaPrezzo - colonnaEuro;
+
+        BufferedImage measureImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        Graphics2D measureG2d = measureImage.createGraphics();
+        measureG2d.setFont(new Font("Monospaced", Font.BOLD, 22));
+        List<String> righeDescrizione = wrapTextToLines(measureG2d, descrizione, colonnaDescrizione);
+        measureG2d.dispose();
+
+        int altezzaPx = altezzaRigaPx * righeDescrizione.size();
+        BufferedImage lineImage = new BufferedImage(larghezzaPx, altezzaPx, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = lineImage.createGraphics();
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, larghezzaPx, altezzaPx);
+
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Monospaced", Font.BOLD, 22));
+        FontMetrics fm = g2d.getFontMetrics();
+
+        String qta = quantita >0 ? String.valueOf(quantita): "";
+        String prezzo = new DecimalFormat("0.00").format(prezzoUnitario*(quantita>0?quantita:1));
+
+        int xQta = padding;
+        int xDesc = xQta + colonnaQta;
+        int xPriceRight = xDesc + colonnaDescrizione + colonnaPrezzo;
+        int xEuro = larghezzaPx - padding - colonnaEuro;
+
+        int primaBaseline = (altezzaRigaPx - fm.getHeight()) / 2 + fm.getAscent();
+        g2d.drawString(qta, xQta, primaBaseline);
+        g2d.drawString(prezzo, xPriceRight - fm.stringWidth(prezzo), primaBaseline);
+        g2d.drawString("€", xEuro, primaBaseline);
+
+        for (int i = 0; i < righeDescrizione.size(); i++) {
+            int baseline = altezzaRigaPx * i + (altezzaRigaPx - fm.getHeight()) / 2 + fm.getAscent();
+            g2d.drawString(righeDescrizione.get(i), xDesc, baseline);
+        }
+
+        g2d.dispose();
+        return lineImage;
+    }
+
     private static BufferedImage createLineItemImage(String testo){
         int altezzaPx = 30;
         int padding = 1;
@@ -264,6 +311,48 @@ public class EscPosPrintService {
         }
 
         return text.substring(0, i) + ellipsis;
+    }
+
+    private static List<String> wrapTextToLines(Graphics2D g2d, String text, int maxWidthPx) {
+        List<String> lines = new ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            lines.add("");
+            return lines;
+        }
+
+        FontMetrics fm = g2d.getFontMetrics();
+        StringBuilder currentLine = new StringBuilder();
+        for (String word : text.split(" ")) {
+            String candidate = currentLine.isEmpty() ? word : currentLine + " " + word;
+            if (fm.stringWidth(candidate) <= maxWidthPx) {
+                currentLine = new StringBuilder(candidate);
+                continue;
+            }
+
+            if (currentLine.length() > 0) {
+                lines.add(currentLine.toString());
+                currentLine = new StringBuilder();
+            }
+
+            String remaining = word;
+            while (fm.stringWidth(remaining) > maxWidthPx) {
+                int i = remaining.length();
+                while (i > 1 && fm.stringWidth(remaining.substring(0, i)) > maxWidthPx) {
+                    i--;
+                }
+                lines.add(remaining.substring(0, i));
+                remaining = remaining.substring(i);
+            }
+            currentLine = new StringBuilder(remaining);
+        }
+
+        if (currentLine.length() > 0) {
+            lines.add(currentLine.toString());
+        }
+        if (lines.isEmpty()) {
+            lines.add("");
+        }
+        return lines;
     }
     //*************************
 
