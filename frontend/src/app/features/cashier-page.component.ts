@@ -145,6 +145,14 @@ export class CashierPageComponent implements OnInit {
       },
     });
   }
+  reprintReceipt() {
+    //curl -sS -i -X POST http://localhost:8080/api/v1/orders/3/print
+    console.log('Reprinting receipt for order id:', this.receiptNumber());
+    this.api.printOrder(this.receiptNumber()).subscribe({
+      next: () => {  console.log('Receipt reprinted successfully.');},
+      error: () => {console.error('Error reprinting receipt for order id:', this.receiptNumber()); }
+    });
+  }
 
   printReceipt() {
     window.print();
