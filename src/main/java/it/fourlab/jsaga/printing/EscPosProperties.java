@@ -21,7 +21,7 @@ public class EscPosProperties {
     private int serialDataBits = 8;
     private int serialStopBits = 1;
     private String serialParity = "none";
-    private String cutMode = "half";
+    private String cutMode = "PART";
     private boolean systemPrintEnabled = true;
     private String printerName = "pt-210";
 
